@@ -36,8 +36,34 @@ def get_config_from_local_file(filename: str) -> dict:
     Returns:
         The config as a dictionary.
     """
-    base_dir = Path(__file__).resolve(strict=True).parent.parent.parent
-    file_path = base_dir / filename
+
+    def try_find_relative_path(file_path: str, parent_path: Path | None = None) -> Path | None:
+        """Traverse into parent directories to try and find a file in these directories when given a relative path."""
+
+        # If its an absolute path, return that full path immediately
+        if Path(file_path).is_absolute():
+            return Path(file_path)
+
+        # Start recursion from the path of this file itself
+        if parent_path is None:
+            return try_find_relative_path(file_path, Path(__file__).resolve(strict=True).parent)
+
+        # If the file exists in this directory, return the full path to it.
+        if Path(parent_path, file_path).exists():
+            return Path(parent_path, file_path)
+
+        # If we are at the root, then stop recursion
+        if parent_path.parent == parent_path:
+            return None
+
+        # Try to move up one level
+        return try_find_relative_path(file_path, Path(parent_path).parent)
+
+    file_path = try_find_relative_path(filename)
+
+    if not file_path:
+        raise Exception('Specified local config file could not be found!')
+
     with file_path.open() as f:
         cleaned = clean_lines_for_json_parsing(f.read())
     return orjson.loads(cleaned.encode())
