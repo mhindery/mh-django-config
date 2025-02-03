@@ -125,7 +125,7 @@ def load_config() -> dict:
     resulting_config = {'source': config_source_list}
 
     for config_source in config_source_list:
-        config_source_type, config_location = config_source.split(':')
+        config_source_type, config_location = config_source.split(':', 1)
 
         if config_source_type == 'file':
             resulting_config.update(get_config_from_local_file(config_location))
